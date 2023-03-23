@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI_.Services;
 
-public class TransferService : IService<Transfer>
+public class TransferService
 {
     private readonly BankDbContext bankDbContext;
 
@@ -21,7 +21,7 @@ public class TransferService : IService<Transfer>
         return newTransfer;
     }
 
-    public Task Delete(Transfer transfer)
+    public Task Delete(string id)
     {
         throw new NotImplementedException();
     }
@@ -31,7 +31,6 @@ public class TransferService : IService<Transfer>
         return await bankDbContext.Transfers
         .Include(a => a.Account)
         .ThenInclude(b => b.Bank)
-        .Include(c => c.Client)
         .ToListAsync();
     }
 
@@ -40,7 +39,7 @@ public class TransferService : IService<Transfer>
         throw new NotImplementedException();
     }
 
-    public Task Update(Transfer transfer)
+    public Task Update(string id, Transfer transfer)
     {
         throw new NotImplementedException();
     }

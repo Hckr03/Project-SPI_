@@ -35,10 +35,11 @@ namespace BankAPI_.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid?>("BankId")
+                    b.Property<Guid>("BankId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ClientDocNum")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Currency")
@@ -101,7 +102,7 @@ namespace BankAPI_.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AccountId")
+                    b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -129,12 +130,16 @@ namespace BankAPI_.Migrations
             modelBuilder.Entity("BankAPI_.Models.Account", b =>
                 {
                     b.HasOne("BankAPI_.Models.Bank", "Bank")
-                        .WithMany()
-                        .HasForeignKey("BankId");
+                        .WithMany("Accounts")
+                        .HasForeignKey("BankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("BankAPI_.Models.Client", "Client")
-                        .WithMany()
-                        .HasForeignKey("ClientDocNum");
+                        .WithMany("Accounts")
+                        .HasForeignKey("ClientDocNum")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Bank");
 
@@ -145,15 +150,29 @@ namespace BankAPI_.Migrations
                 {
                     b.HasOne("BankAPI_.Models.Account", "Account")
                         .WithMany()
-                        .HasForeignKey("AccountId");
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("BankAPI_.Models.Client", "Client")
-                        .WithMany()
+                        .WithMany("Transfers")
                         .HasForeignKey("ClientDocNum");
 
                     b.Navigation("Account");
 
                     b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("BankAPI_.Models.Bank", b =>
+                {
+                    b.Navigation("Accounts");
+                });
+
+            modelBuilder.Entity("BankAPI_.Models.Client", b =>
+                {
+                    b.Navigation("Accounts");
+
+                    b.Navigation("Transfers");
                 });
 #pragma warning restore 612, 618
         }

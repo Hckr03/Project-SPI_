@@ -21,14 +21,16 @@ public class BankService : IService<Bank>
         return newBank;
     }
 
-    public Task Delete(Bank bank)
+    public Task Delete(string bankCode)
     {
         throw new NotImplementedException();
     }
 
     public async Task<ICollection<Bank>> GetAll()
     {
-        return await bankDbContext.Banks.ToListAsync();
+        return await bankDbContext.Banks
+        .Include(a => a.Accounts)
+        .ToListAsync();
     }
 
     public async Task<Bank?> GetById(string id)
@@ -40,10 +42,11 @@ public class BankService : IService<Bank>
     {
         return await bankDbContext.Banks
         .Where(b => b.BankCode == code)
+        .Include(b => b.Accounts)
         .FirstOrDefaultAsync();
     }
 
-    public Task Update(Bank bank)
+    public Task Update(string id, Bank bank)
     {
         throw new NotImplementedException();
     }

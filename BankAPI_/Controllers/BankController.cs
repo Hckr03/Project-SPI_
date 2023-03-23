@@ -10,22 +10,29 @@ namespace BankAPI_.Controllers;
 public class BankController : ControllerBase
 {
     private readonly BankService bankService;
+    private readonly AccountService accountService;
 
-    public BankController(BankService bankService)
+    public BankController(BankService bankService, AccountService accountService)
     {
         this.bankService = bankService;
+        this.accountService = accountService;
     }
 
     [HttpPost]
     public async Task<ActionResult<Bank>> Create(BankDtoIn bank)
     {
-        Bank newBank = new Bank();
-        newBank.BankCode = bank.BankCode;
-        newBank.Name = bank.Name;
-        newBank.Address = bank.Address;
+        var existBank = await bankService.GetByBankCode(bank.BankCode);
+        if(existBank is null)
+        {
+            Bank newBank = new Bank();
+            newBank.BankCode = bank.BankCode;
+            newBank.Name = bank.Name;
+            newBank.Address = bank.Address;
 
-        await bankService.Create(newBank);
-        return Ok(newBank);
+            await bankService.Create(newBank);
+            return Ok(newBank);
+        }
+    return BadRequest( new { message = $"El codigo ({bank.BankCode}) de banco que introdujo no existe"});
     }
 
     [HttpGet]

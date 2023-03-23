@@ -20,24 +20,34 @@ public class ClientService : IService<Client>
         return Client;
     }
 
-    public Task Delete(Client client)
+    public async Task Delete(string id)
     {
-        throw new NotImplementedException();
+        var clientToDelete = await GetById(id);
+        if(clientToDelete is not null)
+        {
+            bankDbContext.Clients.Remove(clientToDelete);
+            await bankDbContext.SaveChangesAsync();
+        }
     }
 
     public async Task<ICollection<Client>> GetAll()
     {
-       return await bankDbContext.Clients.ToListAsync();
+       return await bankDbContext.Clients
+            .Include(a => a.Accounts)
+            .Include(a => a.Transfers)
+            .ToListAsync();
     }
 
     public async Task<Client?> GetById(string id)
     {
         return await bankDbContext.Clients
         .Where(c => c.ClientDocNum == id)
+        .Include(a => a.Accounts)
+        .Include(a => a.Transfers)
         .FirstOrDefaultAsync();
     }
 
-    public Task Update(Client client)
+    public Task Update(string id, Client client)
     {
         throw new NotImplementedException();
     }

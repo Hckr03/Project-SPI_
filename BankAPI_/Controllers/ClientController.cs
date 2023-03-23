@@ -24,7 +24,7 @@ public class ClientController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Client>> Create(Client client)
     {
-        if(await clientService.GetById(client.ClientDocNum) is null)
+        if(await clientService.GetById(client.ClientDocNum) is not null)
         {
             return BadRequest(new { message = $"El cliente con nro. de CI: ({client.ClientDocNum}) ya existe!"} );
         }
@@ -50,14 +50,32 @@ public class ClientController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<Client>> Update(string id)
+    public async Task<ActionResult<Client>> Update(string id, Client client)
     {
         var clientToUpdate = await clientService.GetById(id);
-        if(clientToUpdate is not null)
+        if(clientToUpdate is null)
         {
-            await clientService.Update(clientToUpdate);
-            return NoContent();
+            return BadRequest( new { message = $"No existe el cliente con ID = ({id}) !"} );
         }
-        return BadRequest( new { message = $"No existe el cliente con ID = ({id}) !"} );
+
+        if(clientToUpdate.ClientDocNum != client.ClientDocNum)
+        {
+            return BadRequest( new { message = $"El cliente con nro = ({id}) de la URL no coincide con el nro = ({client.ClientDocNum}) del cuerpo solicitado!"} );
+        }
+
+        await clientService.Update(id, clientToUpdate);
+        return NoContent();        
+    }
+
+    [HttpDelete("{clientDocNum}")]
+    public async Task<ActionResult<Client>> Delete(string docNum)
+    {
+        var clientToDelete = await clientService.GetById(docNum);
+        if(clientToDelete is null)
+        {
+            return BadRequest( new { message = $"El cliente con ID = ({docNum}) no existe!"});
+        }
+        await clientService.Delete(docNum);
+        return Ok();
     }
 }

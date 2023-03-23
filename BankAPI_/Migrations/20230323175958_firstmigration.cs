@@ -45,9 +45,9 @@ namespace BankAPI_.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     AccountNum = table.Column<string>(type: "text", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
-                    ClientDocNum = table.Column<string>(type: "text", nullable: true),
                     Balance = table.Column<decimal>(type: "numeric", nullable: false),
-                    BankId = table.Column<Guid>(type: "uuid", nullable: true)
+                    ClientDocNum = table.Column<string>(type: "text", nullable: false),
+                    BankId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -56,12 +56,14 @@ namespace BankAPI_.Migrations
                         name: "FK_Accounts_Banks_BankId",
                         column: x => x.BankId,
                         principalTable: "Banks",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Accounts_Clients_ClientDocNum",
                         column: x => x.ClientDocNum,
                         principalTable: "Clients",
-                        principalColumn: "ClientDocNum");
+                        principalColumn: "ClientDocNum",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -69,7 +71,7 @@ namespace BankAPI_.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    AccountId = table.Column<Guid>(type: "uuid", nullable: true),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
                     ClientDocNum = table.Column<string>(type: "text", nullable: true),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
@@ -82,7 +84,8 @@ namespace BankAPI_.Migrations
                         name: "FK_Transfers_Accounts_AccountId",
                         column: x => x.AccountId,
                         principalTable: "Accounts",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Transfers_Clients_ClientDocNum",
                         column: x => x.ClientDocNum,

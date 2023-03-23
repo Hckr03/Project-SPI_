@@ -16,15 +16,23 @@ public class AccountService : IService<Account>
 
     public async Task<Account> Create(Account newAccount)
     {
-
         await bankDbContext.Accounts.AddAsync(newAccount);
         await bankDbContext.SaveChangesAsync();
         return newAccount;
     }
 
-    public Task Delete(Account account)
+    public async Task Delete(string account)
     {
-        throw new NotImplementedException();
+        var accountToDelete = await GetByAccNum(account);
+        if(accountToDelete is not null)
+        {
+            // bankDbContext.Accounts.Remove(accountToDelete);
+            // await bankDbContext.SaveChangesAsync();
+            bankDbContext.Clients.RemoveRange(accountToDelete.Client);
+            bankDbContext.Banks.RemoveRange(accountToDelete.Bank);
+            bankDbContext.Accounts.Remove(accountToDelete);
+            await bankDbContext.SaveChangesAsync();
+        }
     }
 
     public async Task<ICollection<Account>> GetAll()
@@ -44,11 +52,20 @@ public class AccountService : IService<Account>
     {
         return await bankDbContext.Accounts
         .Where(a => a.AccountNum == accountNum)
+        .Include(a => a.Client)
+        .Include(a => a.Bank)
         .FirstOrDefaultAsync();
     }
-    public Task Update(Account account)
+    public async Task Update(string accountNum, Account account)
     {
-        throw new NotImplementedException();
+        var existingClient = await GetByAccNum(account.AccountNum);
+        if(existingClient is not null)
+        {
+            existingClient.AccountNum = account.AccountNum;
+            existingClient.Currency = account.Currency;
+            existingClient.Balance = account.Balance;
+            await bankDbContext.SaveChangesAsync();
+        }
     }
     public async Task UpdateBalanceFrom(Account? account, decimal amount)
     {
