@@ -67,7 +67,7 @@ public class AccountService : IService<Account>
             await bankDbContext.SaveChangesAsync();
         }
     }
-    public async Task UpdateBalanceFrom(Account? account, decimal amount)
+    public async Task UpdateBalanceFrom(Account account, decimal amount)
     {
         if(account is not null)
         {
@@ -76,7 +76,7 @@ public class AccountService : IService<Account>
         }
     }
 
-    public async Task UpdateBalanceTo(Account? account, decimal amount)
+    public async Task UpdateBalanceTo(Account account, decimal amount)
     {
         if(account is not null)
         {

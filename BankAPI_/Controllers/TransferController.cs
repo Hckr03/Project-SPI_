@@ -26,24 +26,43 @@ public class TransferController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Transfer>> Create(TransferDtoIn transfer)
     {
-        Transfer transferSent = new Transfer();
-        transferSent.Account = await accountService.GetByAccNum(transfer.FromAccountNum);
-        transferSent.Client = await clientService.GetById(transfer.FromClientDocNumber);
-        transferSent.Date = DateTime.Now.ToUniversalTime();
-        transferSent.Amount = transfer.Amount;
-        transferSent.Status = transfer.Status;
-        await transferService.Create(transferSent);
-        await accountService.UpdateBalanceFrom((await accountService.GetByAccNum(transfer.FromAccountNum)), transfer.Amount);
+        var fromAccount = await accountService.GetByAccNum(transfer.FromAccountNum);
+        var fromClient = await clientService.GetById(transfer.FromClientDocNumber);
 
+        if(fromAccount is not null && fromClient is not null)
+        {
+            Transfer transferSent = new Transfer();
+            transferSent.Account = fromAccount;
+            transferSent.Client = fromClient;
+            transferSent.Date = DateTime.Now.ToUniversalTime();
+            transferSent.Amount = Decimal.Negate(transfer.Amount);
+            transferSent.Status = transfer.Status;
+            await transferService.Create(transferSent);
+            await accountService.UpdateBalanceFrom(fromAccount, transfer.Amount);
+        }
+        else
+        {
+            return BadRequest();
+        }
 
-        Transfer transferRecieved = new Transfer();
-        transferRecieved.Account = await accountService.GetByAccNum(transfer.ToAccountNum);
-        transferRecieved.Client = await clientService.GetById(transfer.ToClientDocNumber);
-        transferRecieved.Date = DateTime.Now.ToUniversalTime();
-        transferRecieved.Amount = transfer.Amount;
-        transferRecieved.Status = transfer.Status;
-        await transferService.Create(transferRecieved);
-        await accountService.UpdateBalanceTo((await accountService.GetByAccNum(transfer.ToAccountNum)), transfer.Amount);
+        var toAccount = await accountService.GetByAccNum(transfer.ToAccountNum);
+        var toClient = await clientService.GetById(transfer.ToClientDocNumber);
+
+        if(toAccount is not null && toClient is not null)
+        {
+            Transfer transferRecieved = new Transfer();
+            transferRecieved.Account = toAccount;
+            transferRecieved.Client = toClient;
+            transferRecieved.Date = DateTime.Now.ToUniversalTime();
+            transferRecieved.Amount = transfer.Amount;
+            transferRecieved.Status = transfer.Status;
+            await transferService.Create(transferRecieved);
+            await accountService.UpdateBalanceTo(toAccount, transfer.Amount);
+        }
+        else
+        {
+            return BadRequest();
+        }
 
         return Ok();
     }

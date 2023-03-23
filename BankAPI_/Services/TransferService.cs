@@ -30,7 +30,7 @@ public class TransferService
     {
         return await bankDbContext.Transfers
         .Include(a => a.Account)
-        .ThenInclude(b => b.Bank)
+        .Include(a => a.Client)
         .ToListAsync();
     }
 

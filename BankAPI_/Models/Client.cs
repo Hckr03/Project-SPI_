@@ -9,6 +9,8 @@ public class Client
     public string ClientDocNum { get; set; } = string.Empty;
     public string DocType { get; set; } = string.Empty;
     public string Fullname { get; set; } = string.Empty;
+    [JsonIgnore]
     public ICollection<Account> Accounts { get; set; } = new List<Account>();
+    [JsonIgnore]
     public ICollection<Transfer> Transfers { get; set; } = new List<Transfer>();
 }
