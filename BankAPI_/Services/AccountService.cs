@@ -1,11 +1,12 @@
 using BankAPI_.Data;
+using BankAPI_.Dtos;
 using BankAPI_.Models;
 using BankAPI_.Services.Implements;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI_.Services;
 
-public class AccountService : IService<Account>
+public class AccountService
 {
     private readonly BankDbContext bankDbContext;
 
@@ -21,25 +22,22 @@ public class AccountService : IService<Account>
         return newAccount;
     }
 
-    public async Task Delete(string account)
+    public async Task Delete(Account account)
     {
-        var accountToDelete = await GetByAccNum(account);
-        if(accountToDelete is not null)
-        {
-            // bankDbContext.Accounts.Remove(accountToDelete);
-            // await bankDbContext.SaveChangesAsync();
-            bankDbContext.Clients.RemoveRange(accountToDelete.Client);
-            bankDbContext.Banks.RemoveRange(accountToDelete.Bank);
-            bankDbContext.Accounts.Remove(accountToDelete);
-            await bankDbContext.SaveChangesAsync();
-        }
+     // bankDbContext.Accounts.Remove(accountToDelete);
+     // await bankDbContext.SaveChangesAsync();
+        bankDbContext.Clients.RemoveRange(account.Client);
+        bankDbContext.Banks.RemoveRange(account.Bank);
+        bankDbContext.Accounts.Remove(account);
+        await bankDbContext.SaveChangesAsync();
+
     }
 
     public async Task<ICollection<Account>> GetAll()
     {
         return await bankDbContext.Accounts
-        .Include(c => c.Client)
-        .Include(b => b.Bank)
+        .Include(a => a.Client)
+        .Include(a => a.Bank)
         .ToListAsync();
     }
 
@@ -71,6 +69,7 @@ public class AccountService : IService<Account>
     {
         if(account is not null)
         {
+
             account.Balance = Decimal.Subtract(account.Balance, amount);
             await bankDbContext.SaveChangesAsync();
         }

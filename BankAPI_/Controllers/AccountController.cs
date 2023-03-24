@@ -24,22 +24,10 @@ public class AccountController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Account>> Create(AccountDtoIn account)
     {
-        var client = await clientService.GetById(account.ClientDocNum);
-        var bank = await bankService.GetByBankCode(account.BankCode);
-        var auxAccount = await accountService.GetByAccNum(account.AccountNum);
-
-        if(client is not null && bank is not null && auxAccount is null)
+        if(await createAccount(account))
         {
-            var newAccount = new Account();
-            newAccount.AccountNum = account.AccountNum;
-            newAccount.Currency = account.Currency; 
-            newAccount.Balance = account.Balance;
-            newAccount.Client = client;
-            newAccount.Bank = bank;
-        
-            await accountService.Create(newAccount);
-            return Ok(newAccount); 
-        }
+            return Ok( new { message = $"La cuenta se creo exitosamente!"} );
+        }        
         return BadRequest(new { message = $"La cuenta ({account.AccountNum}) ya existe!"});
     }
 
@@ -56,16 +44,57 @@ public class AccountController : ControllerBase
         {
             return Ok(await accountService.GetByAccNum(accountNum));
         }
-    return BadRequest(new { message = $"La cuenta con nro. ({accountNum}) no existe!"});
+        return BadRequest(new { message = $"La cuenta con nro. ({accountNum}) no existe!"});
     }
 
-    [HttpPut]
+    [HttpPut("{accountNum}")]
     public async Task<ActionResult<Account>> Update(string accountNum, AccountDtoIn account)
     {
-        if(accountNum != account.AccountNum)
+        if(accountNum == account.AccountNum)
         {
-            return BadRequest( new {message = $"El nro de cuenta ({accountNum}) de la URL no conicide con el nro de cuenta ({account.AccountNum}) del cuerpo solicitado"});
+            await updateAccount(account);
+            return Ok( new {message = "Datos actualizados correctamente!" });
         }
+        return BadRequest( new {message = "Los datos proporcionados no son los correctos!" });
+    }
+
+    [HttpDelete("accountNum")]
+    public async Task<ActionResult<Account>> Delete(string accountNum)
+    {
+        var accountToDelete = await accountService.GetByAccNum(accountNum);
+        if(accountToDelete is not null)
+        {
+            await accountService.Delete(accountToDelete);
+            return NoContent();
+        }
+        return BadRequest( new { message = $"La cuenta con nro ({accountNum}) no existe o ya ha sido eliminado!"});
+    }
+
+
+    //methods
+    private async Task<bool> createAccount(AccountDtoIn account)
+    {
+        var client = await clientService.GetById(account.ClientDocNum);
+        var bank = await bankService.GetByBankCode(account.BankCode);
+        var auxAccount = await accountService.GetByAccNum(account.AccountNum);
+
+        if(client is not null && bank is not null && auxAccount is null)
+        {
+            var newAccount = new Account();
+            newAccount.AccountNum = account.AccountNum;
+            newAccount.Currency = account.Currency; 
+            newAccount.Balance = account.Balance;
+            newAccount.Client = client;
+            newAccount.Bank = bank;
+        
+            await accountService.Create(newAccount);
+            return true;
+        }
+        return false;
+    }
+
+    private async Task<bool> updateAccount(AccountDtoIn account)
+    {
         var accountToUpdate = await accountService.GetByAccNum(account.AccountNum);
         var clientToUpdate = await clientService.GetById(account.ClientDocNum);
         var bankToUpdate = await bankService.GetByBankCode(account.BankCode);
@@ -79,21 +108,9 @@ public class AccountController : ControllerBase
             accountToUpdate.Currency = account.Currency;
             accountToUpdate.Balance = account.Balance;
 
-            await accountService.Update(accountNum, accountToUpdate);
-            return Ok(accountToUpdate);
+            await accountService.Update(account.AccountNum, accountToUpdate);
+            return true;
         }
-        return BadRequest("Los datos proporcionados no son los correctos");
-    }
-
-    [HttpDelete("{accountNum}")]
-    public async Task<ActionResult<Account>> Delete(string accountNum)
-    {
-        var accountToDelete = await accountService.GetByAccNum(accountNum);
-        if(accountToDelete is not null)
-        {
-            await accountService.Delete(accountNum);
-            return NoContent();
-        }
-        return BadRequest( new { message = $"La cuenta con nro ({accountNum}) no existe o ya ha sido eliminado!"});
+        return false;
     }
 }

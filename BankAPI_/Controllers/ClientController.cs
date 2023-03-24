@@ -10,14 +10,10 @@ namespace BankAPI_.Controllers;
 [Route("[controller]")]
 public class ClientController : ControllerBase
 {
-    // private readonly AccountService accountService;
-    // private readonly BankService bankService;
     private readonly ClientService clientService;
 
     public ClientController(AccountService accountService, BankService bankService, ClientService clientService)
     {
-        // this.accountService = accountService;
-        // this.bankService = bankService;
         this.clientService = clientService;
     }
 
@@ -28,8 +24,8 @@ public class ClientController : ControllerBase
         {
             return BadRequest(new { message = $"El cliente con nro. de CI: ({client.ClientDocNum}) ya existe!"} );
         }
-        await clientService.Create(client);
-        return CreatedAtAction(nameof(GetById), new {id = client.ClientDocNum}, client);
+        var newClient = await clientService.Create(client);
+        return CreatedAtAction(nameof(GetById), new {id = newClient.ClientDocNum}, newClient);
     }
 
     [HttpGet]
@@ -38,36 +34,36 @@ public class ClientController : ControllerBase
        return await clientService.GetAll();
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Client>> GetById(Client client)
+    [HttpGet("{docNum}")]
+    public async Task<ActionResult<Client>> GetById(string docNum)
     {
-        var newClient = await clientService.GetById(client.ClientDocNum);
-        if(newClient is null)
+        var client = await clientService.GetById(docNum);
+        if(client is null)
         {
-            return NotFound(new { message = $"El cliente con ID = ({client.ClientDocNum}) no existe!"} );
+            return NotFound(new { message = $"El cliente con ID = ({docNum}) no existe!"} );
         }
-        return newClient;
+        return client;
     }
 
-    [HttpPut("{id}")]
-    public async Task<ActionResult<Client>> Update(string id, Client client)
+    [HttpPut("{docNum}")]
+    public async Task<ActionResult<Client>> Update(string docNum, Client client)
     {
-        var clientToUpdate = await clientService.GetById(id);
+        if(docNum != client.ClientDocNum)
+        {
+            return BadRequest( new { message = $"El cliente con nro = ({docNum}) de la URL no coincide con el nro = ({client.ClientDocNum}) del cuerpo solicitado!"} );
+        }
+
+        var clientToUpdate = await clientService.GetById(docNum);
         if(clientToUpdate is null)
         {
-            return BadRequest( new { message = $"No existe el cliente con ID = ({id}) !"} );
+            return BadRequest( new { message = $"No existe el cliente con ID = ({docNum}) !"} );
         }
 
-        if(clientToUpdate.ClientDocNum != client.ClientDocNum)
-        {
-            return BadRequest( new { message = $"El cliente con nro = ({id}) de la URL no coincide con el nro = ({client.ClientDocNum}) del cuerpo solicitado!"} );
-        }
-
-        await clientService.Update(id, clientToUpdate);
+        await clientService.Update(docNum, client);
         return NoContent();        
     }
 
-    [HttpDelete("{clientDocNum}")]
+    [HttpDelete("{docNum}")]
     public async Task<ActionResult<Client>> Delete(string docNum)
     {
         var clientToDelete = await clientService.GetById(docNum);
@@ -75,7 +71,7 @@ public class ClientController : ControllerBase
         {
             return BadRequest( new { message = $"El cliente con ID = ({docNum}) no existe!"});
         }
-        await clientService.Delete(docNum);
-        return Ok();
+        await clientService.Delete(clientToDelete);
+        return Ok(new { message = $"El cliente con Nro. de documento ({docNum} ha sido eliminado!)"});
     }
 }

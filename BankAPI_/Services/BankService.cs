@@ -1,11 +1,11 @@
 using BankAPI_.Data;
+using BankAPI_.Dtos;
 using BankAPI_.Models;
-using BankAPI_.Services.Implements;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI_.Services;
 
-public class BankService : IService<Bank>
+public class BankService
 {
     private readonly BankDbContext bankDbContext;
 
@@ -21,15 +21,15 @@ public class BankService : IService<Bank>
         return newBank;
     }
 
-    public Task Delete(string bankCode)
+    public async Task Delete(Bank bank)
     {
-        throw new NotImplementedException();
+        bankDbContext.Banks.Remove(bank);
+        await bankDbContext.SaveChangesAsync();
     }
 
     public async Task<ICollection<Bank>> GetAll()
     {
         return await bankDbContext.Banks
-        .Include(a => a.Accounts)
         .ToListAsync();
     }
 
@@ -46,8 +46,17 @@ public class BankService : IService<Bank>
         .FirstOrDefaultAsync();
     }
 
-    public Task Update(string id, Bank bank)
+    public async Task Update(string code, BankDtoIn bank)
     {
-        throw new NotImplementedException();
+        var bankToUpdate = await GetByBankCode(code);
+        if(bankToUpdate is not null)
+        {
+            bankToUpdate.BankCode = bank.BankCode;
+            bankToUpdate.Name = bank.Name;
+            bankToUpdate.Address = bank.Address;
+            
+            await bankDbContext.SaveChangesAsync();
+        }
+
     }
 }

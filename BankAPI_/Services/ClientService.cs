@@ -1,11 +1,12 @@
 using BankAPI_.Data;
+using BankAPI_.Dtos;
 using BankAPI_.Models;
 using BankAPI_.Services.Implements;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankAPI_.Services;
 
-public class ClientService : IService<Client>
+public class ClientService
 {
     private readonly BankDbContext bankDbContext;
 
@@ -20,35 +21,33 @@ public class ClientService : IService<Client>
         return Client;
     }
 
-    public async Task Delete(string id)
+    public async Task Delete(Client client)
     {
-        var clientToDelete = await GetById(id);
-        if(clientToDelete is not null)
-        {
-            bankDbContext.Clients.Remove(clientToDelete);
-            await bankDbContext.SaveChangesAsync();
-        }
+        bankDbContext.Clients.Remove(client);
+        await bankDbContext.SaveChangesAsync();
     }
 
     public async Task<ICollection<Client>> GetAll()
     {
        return await bankDbContext.Clients
-            .Include(a => a.Accounts)
-            .Include(a => a.Transfers)
-            .ToListAsync();
+        .ToListAsync();
     }
 
-    public async Task<Client?> GetById(string id)
+    public async Task<Client?> GetById(string docNum)
     {
-        return await bankDbContext.Clients
-        .Where(c => c.ClientDocNum == id)
-        .Include(a => a.Accounts)
-        .Include(a => a.Transfers)
-        .FirstOrDefaultAsync();
+        return await bankDbContext.Clients.FindAsync(docNum);
     }
 
-    public Task Update(string id, Client client)
+    public async Task Update(string docNum, Client client)
     {
-        throw new NotImplementedException();
+        var clientToUpdate = await GetById(docNum);
+        if(clientToUpdate is not null)
+        {
+            clientToUpdate.ClientDocNum = client.ClientDocNum;
+            clientToUpdate.DocType = client.DocType;
+            clientToUpdate.Fullname = client.Fullname;
+
+            await bankDbContext.SaveChangesAsync();
+        }
     }
 }
