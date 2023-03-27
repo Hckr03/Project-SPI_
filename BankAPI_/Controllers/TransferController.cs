@@ -40,7 +40,12 @@ public class TransferController : ControllerBase
              return BadRequest( new { message = $"Para realizar esta operacion, los bancos deben ser distintos!"});
         }
 
-        makeTransfer(transfer);
+        if(!await balance(transfer))
+        {
+            return BadRequest( new { message = $"No posee fondos suficiente para realizar esta operacion!"});
+        }
+
+        await makeTransfer(transfer);
         return Ok();
     }
 
@@ -65,11 +70,11 @@ public class TransferController : ControllerBase
     [HttpGet("received")]
     public async Task<ICollection<Transfer>> GetAllReceived()
     {
-        return await transferService.GetAllSent();
+        return await transferService.GetAllReceived();
     }
 
     [HttpPut("status/{id}")]
-    public async Task<ActionResult<Transfer>> UpdateStatus(string id, TransferStatusDto transfer)
+    public async Task<ActionResult<Transfer>> UpdateStatus(Guid id, TransferStatusDto transfer)
     {
         var statusToUpdate = await transferService.GetById(id);
         if(statusToUpdate is not null)
@@ -90,6 +95,18 @@ public class TransferController : ControllerBase
             return true;
         }
         return false;
+    }
+
+        [HttpDelete("{id}")]
+    public async Task<ActionResult<Transfer>> Delete(Guid id)
+    {
+        var transfer = await transferService.GetById(id);
+        if(transfer is not null)
+        {
+            await transferService.Delete(transfer);
+            return NoContent();
+        }
+        return NotFound( new { message = $"La transferencia con ID + $({id}) no existe!"});
     }
     
     private bool transferNullOrEmpty(TransferDtoIn transfer)
@@ -117,7 +134,7 @@ public class TransferController : ControllerBase
         return false;
     }
     
-    private async void makeTransfer(TransferDtoIn transfer)
+    private async Task<Transfer?> makeTransfer(TransferDtoIn transfer)
     {
         var fromAccount = await accountService.GetByAccNum(transfer.FromAccountNum);
         var fromClient = await clientService.GetById(transfer.FromClientDocNumber);
@@ -125,30 +142,45 @@ public class TransferController : ControllerBase
         var toAccount = await accountService.GetByAccNum(transfer.ToAccountNum);
         var toClient = await clientService.GetById(transfer.ToClientDocNumber);
 
-        if(fromAccount is not null && fromClient is not null)
+    if (fromAccount is null || fromClient is null || toAccount is null || toClient is null)
+    {
+        throw new Exception("Uno o mas de los objetos requeridos no se encontraron!");
+    }
+    
+        Transfer transferSent = new Transfer();
+        transferSent.Account = fromAccount;
+        transferSent.Client = fromClient;
+        transferSent.Date = DateTime.Now.ToUniversalTime();
+        transferSent.Amount = Decimal.Negate(transfer.Amount);
+        transferSent.Status = transfer.Status;
+
+        await transferService.Create(transferSent);
+        await accountService.UpdateBalanceFrom(fromAccount, transfer.Amount);
+
+        Transfer transferRecieved = new Transfer();
+        transferRecieved.Account = toAccount;
+        transferRecieved.Client = toClient;
+        transferRecieved.Date = DateTime.Now.ToUniversalTime();
+        transferRecieved.Amount = transfer.Amount;
+        transferRecieved.Status = transfer.Status;
+        
+        await transferService.Create(transferRecieved);
+        await accountService.UpdateBalanceTo(toAccount, transfer.Amount);
+
+        return transferSent;
+    }
+
+    private async Task<bool> balance(TransferDtoIn transfer)
+    {
+        var fromAccount = await accountService.GetByAccNum(transfer.FromAccountNum);
+       
+       if(fromAccount is not null)
         {
-            Transfer transferSent = new Transfer();
-            transferSent.Account = fromAccount;
-            transferSent.Client = fromClient;
-            transferSent.Date = DateTime.Now.ToUniversalTime();
-            transferSent.Amount = Decimal.Negate(transfer.Amount);
-            transferSent.Status = transfer.Status;
-
-            await transferService.Create(transferSent);
-            await accountService.UpdateBalanceFrom(fromAccount, transfer.Amount);
+            if(fromAccount.Balance < transfer.Amount)
+            {
+                return false;
+            }
         }
-
-        if(toAccount is not null && toClient is not null)
-        {
-            Transfer transferRecieved = new Transfer();
-            transferRecieved.Account = toAccount;
-            transferRecieved.Client = toClient;
-            transferRecieved.Date = DateTime.Now.ToUniversalTime();
-            transferRecieved.Amount = transfer.Amount;
-            transferRecieved.Status = transfer.Status;
-
-            await transferService.Create(transferRecieved);
-            await accountService.UpdateBalanceTo(toAccount, transfer.Amount);
-        }
+        return true;
     }
 }

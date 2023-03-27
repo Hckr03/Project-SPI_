@@ -58,7 +58,7 @@ public class AccountController : ControllerBase
         return BadRequest( new {message = "Los datos proporcionados no son los correctos!" });
     }
 
-    [HttpDelete("accountNum")]
+    [HttpDelete("{accountNum}")]
     public async Task<ActionResult<Account>> Delete(string accountNum)
     {
         var accountToDelete = await accountService.GetByAccNum(accountNum);

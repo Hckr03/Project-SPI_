@@ -20,12 +20,12 @@ public class ClientController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Client>> Create(Client client)
     {
-        if(await clientService.GetById(client.ClientDocNum) is not null)
+        if(await clientService.GetById(client.ClientDocNum) is null)
         {
-            return BadRequest(new { message = $"El cliente con nro. de CI: ({client.ClientDocNum}) ya existe!"} );
+            var newClient = await clientService.Create(client);
+            return Ok(new { message = $"Se creo cliente con exito!"});
         }
-        var newClient = await clientService.Create(client);
-        return CreatedAtAction(nameof(GetById), new {id = newClient.ClientDocNum}, newClient);
+        return BadRequest(new { message = $"El cliente con nro. de CI: ({client.ClientDocNum}) ya existe!"} );
     }
 
     [HttpGet]
@@ -72,6 +72,6 @@ public class ClientController : ControllerBase
             return BadRequest( new { message = $"El cliente con ID = ({docNum}) no existe!"});
         }
         await clientService.Delete(clientToDelete);
-        return Ok(new { message = $"El cliente con Nro. de documento ({docNum} ha sido eliminado!)"});
+        return Ok(new { message = $"El cliente con Nro. de documento ({docNum}) ha sido eliminado!)"});
     }
 }

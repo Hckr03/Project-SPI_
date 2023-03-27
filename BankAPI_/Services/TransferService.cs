@@ -22,20 +22,22 @@ public class TransferService
         return newTransfer;
     }
 
-    public Task Delete(string id)
+    public async Task Delete(Transfer transfer)
     {
-        throw new NotImplementedException();
+        bankDbContext.Transfers.Remove(transfer);
+        await bankDbContext.SaveChangesAsync();
     }
 
     public async Task<ICollection<Transfer>> GetAll()
     {
         return await bankDbContext.Transfers
         .Include(a => a.Account)
+        .ThenInclude(a => a.Bank)
         .Include(a => a.Client)
         .ToListAsync();
     }
 
-    public async Task<Transfer?> GetById(string id)
+    public async Task<Transfer?> GetById(Guid id)
     {
         return await bankDbContext.Transfers.FindAsync(id);
     }
@@ -54,6 +56,7 @@ public class TransferService
         return await bankDbContext.Transfers
         .Where(t => t.Amount < 0)
         .Include(t => t.Account)
+        .ThenInclude(a => a.Bank)
         .Include(t => t.Client)
         .ToListAsync();
     }
@@ -63,11 +66,12 @@ public class TransferService
         return await bankDbContext.Transfers
         .Where(t => t.Amount > 0)
         .Include(t => t.Account)
+        .ThenInclude(a => a.Bank)
         .Include(t => t.Client)
         .ToListAsync();
     }
 
-    public async Task UpdateStatus(string id, TransferStatusDto transfer)
+    public async Task UpdateStatus(Guid id, TransferStatusDto transfer)
     {
         var statusToUpdate = await GetById(id);
         if(statusToUpdate is not null)

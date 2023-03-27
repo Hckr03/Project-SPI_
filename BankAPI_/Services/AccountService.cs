@@ -26,8 +26,6 @@ public class AccountService
     {
      // bankDbContext.Accounts.Remove(accountToDelete);
      // await bankDbContext.SaveChangesAsync();
-        bankDbContext.Clients.RemoveRange(account.Client);
-        bankDbContext.Banks.RemoveRange(account.Bank);
         bankDbContext.Accounts.Remove(account);
         await bankDbContext.SaveChangesAsync();
 
